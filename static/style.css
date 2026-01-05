@@ -122,4 +122,39 @@ th, td { padding: 8px 10px; border-bottom: 1px solid #eef2f7; text-align: left; 
   .header .brand { font-size: 1rem; }
 }
 
+.msg {
+  color: green;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.pagination {
+  margin-top: 10px;
+}
+
+.pagination a {
+  margin-right: 10px;
+  color: #3498db;
+  text-decoration: none;
+}
+
+.pagination a:hover {
+  text-decoration: underline;
+}
+
+.download-btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 6px 12px;
+  background-color: #2ecc71;
+  color: white;
+  border-radius: 5px;
+  text-decoration: none;
+}
+
+.download-btn:hover {
+  background-color: #27ae60;
+}
+
+
 /* End of file */

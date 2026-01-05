@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="card">
+    <h2>{{ title }}</h2>
+    <p>{{ message }}</p>
+  </div>
+
+  <!-- 输入名字的表单 -->
+  <div class="card">
+    <form method="post" action="/submit">
+      <input type="text" name="username" placeholder="请输入你的名字" required>
+      <button type="submit">提交名字</button>
+    </form>
+
+    {% if name_history %}
+      <h3>历史名字：</h3>
+      <ul>
+        {% for entry in name_history %}
+          <li>{{ entry.username }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+
+  <!-- Python 计算表单 -->
+  <div class="card">
+    <form method="post" action="/compute">
+      <input type="number" name="number" placeholder="输入一个数字" required>
+      <button type="submit">计算平方和立方</button>
+    </form>
+
+    {% if compute_history %}
+      <h3>历史计算：</h3>
+      <ul>
+        {% for entry in compute_history %}
+          <li>{{ entry.number }} → 平方: {{ entry.square }}, 立方: {{ entry.cube }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+{% endblock %}

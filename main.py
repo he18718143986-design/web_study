@@ -85,7 +85,9 @@ def submit(request: Request, username: str = Form(...)):
     db.add(entry)
     db.commit()
     db.close()
-    return home(request, msg=f"名字 '{username}' 提交成功！")
+    # 当从内部直接调用 `home()` 时，FastAPI 不会为 Query(...) 提供值，
+    # 导致 `name_page`/`compute_page` 保持为 Query 对象。显式传入页码避免此问题。
+    return home(request, name_page=1, compute_page=1, msg=f"名字 '{username}' 提交成功！")
 
 
 # -------------------
@@ -100,7 +102,8 @@ def compute(request: Request, number: float = Form(...)):
     db.add(entry)
     db.commit()
     db.close()
-    return home(request, msg=f"数字 {number} 计算完成！")
+    # 同上：显式传入页码，避免 Query 对象被误用为数值
+    return home(request, name_page=1, compute_page=1, msg=f"数字 {number} 计算完成！")
 
 
 # -------------------

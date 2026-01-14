@@ -29,8 +29,8 @@ def _build_client(model_id: str):
     if mid.startswith("mock"):
         return MockAdapter()
     if mid == "hf":
-        # Allow overriding HF model id via env; default gpt2 for smoke tests.
-        model_name = os.getenv("HF_MODEL_ID", "gpt2")
+        # Allow overriding HF model id via env; default bigscience/bloom-560m for cloud inference.
+        model_name = os.getenv("HF_MODEL_ID", "bigscience/bloom-560m")
         return HuggingFaceAdapter(model_id=model_name)
     if mid == "ollama":
         model_name = os.getenv("OLLAMA_MODEL", "llama3.2")

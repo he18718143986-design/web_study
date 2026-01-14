@@ -1,96 +1,39 @@
-"""
-test_hf_model.py
-
-用途：
-- 独立测试 Hugging Face Inference API 是否真实可用
-- 明确区分：环境变量问题 / 网络问题 / 模型问题
-- 不依赖 FastAPI / orchestrator / session
-"""
-
-import asyncio
-import time
+# test_hf_model.py
+from transformers import pipeline
 import os
-import traceback
 
-from dotenv import load_dotenv
+# -----------------------------
+# 1️⃣ 确认 Hugging Face API Token
+# -----------------------------
+api_token = os.environ.get("HUGGINGFACEHUB_API_TOKEN")
+if not api_token:
+    raise ValueError("请先设置环境变量 HUGGINGFACEHUB_API_TOKEN")
 
-# ✅ 显式加载 .env（非常关键）
-load_dotenv()
+# -----------------------------
+# 2️⃣ 选择模型
+# -----------------------------
+model_name = "distilgpt2"  # 小型文本生成模型
 
-from backend.llm.adapters.hf_adapter import HuggingFaceAdapter
+# -----------------------------
+# 3️⃣ 创建 pipeline
+# 不需要传 use_auth_token，环境变量已经够
+# -----------------------------
+try:
+    generator = pipeline(
+        "text-generation",
+        model=model_name,
+    )
+except Exception as e:
+    print("创建 pipeline 失败:", e)
+    exit(1)
 
-# 固定测试问题（不要改，保证可重复）
-TEST_QUESTION = "请用 3 点简要说明什么是在线教学平台。"
-
-# ✅ 明确指定一个「确定可用」的 Hugging Face 模型
-HF_MODEL_ID = "google/flan-t5-small"
-
-
-async def test_hf():
-    print("=" * 70)
-    print("🚀 开始测试 Hugging Face Inference API")
-    print("=" * 70)
-
-    # 1️⃣ 明确检查环境变量
-    hf_key = os.getenv("HUGGINGFACE_API_KEY")
-    if not hf_key:
-        print("❌ 未检测到环境变量 HUGGINGFACE_API_KEY")
-        print("👉 请先 export 或写入 .env 文件")
-        return
-    else:
-        print("✅ 已检测到 HUGGINGFACE_API_KEY（已隐藏）")
-
-    # 2️⃣ 初始化 HF Adapter
-    print(f"\n📦 使用模型: {HF_MODEL_ID}")
-    adapter = HuggingFaceAdapter(model_id=HF_MODEL_ID)
-
-    # 3️⃣ 构造最小 prompt
-    prompt = f"""
-你是一个助手，请用中文回答。
-
-问题：
-{TEST_QUESTION}
-""".strip()
-
-    print("\n📨 Prompt:")
-    print(prompt)
-    print("-" * 70)
-
-    # 4️⃣ 发起真实调用并计时
-    start_time = time.time()
-
-    try:
-        response = await adapter.generate(
-            prompt=prompt,
-            temperature=0.2,
-            max_tokens=256,
-        )
-
-        elapsed = time.time() - start_time
-
-        print("✅ Hugging Face 调用成功")
-        print(f"⏱️ 用时: {elapsed:.2f} 秒")
-
-        # 5️⃣ 判断是否“真的调用了远程模型”
-        if elapsed < 1.0:
-            print("⚠️ 警告：返回过快，可能未走真实 HF 请求")
-        else:
-            print("🎯 判断：这是一次真实的 HF Inference 请求")
-
-        print("\n📤 模型原始输出:")
-        print(response)
-
-    except Exception as e:
-        elapsed = time.time() - start_time
-
-        print("❌ Hugging Face 调用失败")
-        print(f"⏱️ 用时: {elapsed:.2f} 秒")
-        print("\n错误信息:")
-        print(str(e))
-
-        print("\n完整异常栈（用于调试）:")
-        traceback.print_exc()
-
-
-if __name__ == "__main__":
-    asyncio.run(test_hf())
+# -----------------------------
+# 4️⃣ 测试生成文本
+# 注意这里加 truncation=True 避免警告
+# -----------------------------
+prompt = "Hello, can you explain what Hugging Face is?"
+try:
+    output = generator(prompt, max_length=50, truncation=True)
+    print("模型输出:", output)
+except Exception as e:
+    print("模型调用失败:", e)

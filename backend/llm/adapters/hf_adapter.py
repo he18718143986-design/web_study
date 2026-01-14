@@ -1,9 +1,9 @@
+
 import json
 import os
-from typing import Any, Dict, Optional
-
+from typing import Any
+from huggingface_hub import InferenceClient
 from backend.llm.client import LLMClient
-from backend.services.http_retry import post_json
 
 
 def _error_response(error_msg: str) -> str:
@@ -22,53 +22,32 @@ def _error_response(error_msg: str) -> str:
     })
 
 
-class HuggingFaceAdapter(LLMClient):
-    def __init__(self, model_id: str = "gpt2") -> None:
-        self.model_id = model_id
 
-    async def generate(self, prompt: str, **kwargs: Any) -> str:
+class HuggingFaceAdapter(LLMClient):
+    def __init__(self, model_id: str = "bigscience/bloom-560m") -> None:
+        self.model_id = model_id
         api_key = os.getenv("HUGGINGFACE_API_KEY")
         if not api_key:
-            return _error_response("HUGGINGFACE_API_KEY not set; cannot call Hugging Face Inference API.")
+            raise RuntimeError("HUGGINGFACE_API_KEY not set; cannot call Hugging Face Inference API.")
+        self.inf = InferenceClient(model=self.model_id, token=api_key)
 
-        endpoint = f"https://api-inference.huggingface.co/models/{self.model_id}"
-        headers = {"Authorization": f"Bearer {api_key}"}
-
-        payload: Dict[str, Any] = {"inputs": prompt}
-        parameters: Optional[Dict[str, Any]] = kwargs.get("parameters")
-        if parameters:
-            payload["parameters"] = parameters
-
+    async def generate(self, prompt: str, **kwargs: Any) -> str:
+        import asyncio
+        loop = asyncio.get_event_loop()
         try:
-            response = await post_json(endpoint, payload, headers=headers)
-        except Exception as exc:  # pragma: no cover - network dependent
-            error_msg = str(exc)[:200]  # Limit error message length
-            return _error_response(f"HF adapter error after retries: {error_msg}")
-
-        # Check for empty response
-        if not response.text or not response.text.strip():
-            return _error_response("Empty response from Hugging Face API")
-        
-        try:
-            data = response.json()
-        except Exception as json_exc:
-            # If response is not JSON, return error message as structured response
-            error_msg = response.text[:200] if response.text else "Invalid JSON response"
-            return _error_response(f"HF API returned non-JSON: {error_msg}")
-        
-        # Handle HF API error responses
-        if isinstance(data, dict):
-            if "error" in data:
-                return _error_response(f"HF API error: {data.get('error', 'Unknown error')}")
-            if "estimated_time" in data:
-                # Model is loading
-                return _error_response(f"HF model is loading, estimated time: {data.get('estimated_time')}s")
-        
-        # Extract generated text from various HF response formats
-        if isinstance(data, list) and data and isinstance(data[0], dict) and "generated_text" in data[0]:
-            return str(data[0]["generated_text"])
-        if isinstance(data, dict) and "generated_text" in data:
-            return str(data["generated_text"])
-        
-        # If we can't parse the response, return it as an error structured response
-        return _error_response(f"HF adapter received unexpected response format: {str(data)[:200]}")
+            try:
+                res = await loop.run_in_executor(None, lambda: self.inf.text_generation(prompt))
+            except BaseException as stop_exc:
+                return _error_response(f"HF adapter internal error: {str(stop_exc)[:200]}")
+            # 兼容返回格式
+            if res is None:
+                return _error_response("HF adapter returned None")
+            if isinstance(res, dict) and "error" in res:
+                return _error_response(f"HF API error: {res.get('error', 'Unknown error')}")
+            if isinstance(res, list) and res and isinstance(res[0], dict) and "generated_text" in res[0]:
+                return str(res[0]["generated_text"])
+            if isinstance(res, dict) and "generated_text" in res:
+                return str(res["generated_text"])
+            return str(res)
+        except BaseException as exc:
+            return _error_response(f"HF adapter error: {str(exc)[:200]}")

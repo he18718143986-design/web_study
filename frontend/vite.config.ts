@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/v1': {
-        target: 'http://localhost:8000',
+        target: 'https://reimagined-potato-7v6wvgp5pr5qhxj4q-8000.app.github.dev',
         changeOrigin: true,
         secure: false
       }

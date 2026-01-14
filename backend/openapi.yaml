@@ -1,0 +1,177 @@
+openapi: 3.0.1
+info:
+  title: Multi-LLM Arbiter API
+  version: "0.1.0"
+paths:
+  /v1/query:
+    post:
+      summary: 提交问题并启动会话（初轮运行，可能为异步）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                question:
+                  type: string
+                models:
+                  type: array
+                  items: { type: string }
+                prompt_id:
+                  type: string
+                prompt_version:
+                  type: string
+                max_rounds:
+                  type: integer
+                  default: 3
+      responses:
+        "200":
+          description: 会话已接受并返回初轮结果或 session_id（若为异步）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+  /v1/session/{session_id}:
+    get:
+      summary: 获取会话所有轮次与当前状态
+      parameters:
+        - in: path
+          name: session_id
+          schema: { type: string }
+          required: true
+      responses:
+        "200":
+          description: 会话详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+  /v1/followup:
+    post:
+      summary: 基于 session 发起 followup（追加一轮）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                session_id: { type: string }
+                followup_question: { type: string }
+                models:
+                  type: array
+                  items: { type: string }
+                prompt_id: { type: string }
+                prompt_version: { type: string }
+      responses:
+        "200":
+          description: 新一轮结果或 session 更新
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+  /v1/models:
+    get:
+      summary: 获取可用模型列表
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  models:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        name: { type: string }
+                        description: { type: string }
+                        version: { type: string }
+                        status: { type: string }
+
+components:
+  schemas:
+    SummaryPoint:
+      type: object
+      properties:
+        id: { type: string }
+        text: { type: string }
+        confidence: { type: string, enum: [high, medium, low] }
+    StructuredResponse:
+      type: object
+      properties:
+        model_id: { type: string }
+        model_version: { type: string }
+        response_raw: { type: string }
+        structured:
+          type: object
+          properties:
+            summary_points:
+              type: array
+              items: { $ref: '#/components/schemas/SummaryPoint' }
+            detailed_explanation: { type: string }
+            evidence:
+              type: array
+              items: { type: string }
+            reproducible_example: { type: string }
+        meta:
+          type: object
+          properties:
+            tokens_in: { type: integer }
+            tokens_out: { type: integer }
+            usage_tokens_estimate: { type: integer }
+            latency_s: { type: number }
+            request_id: { type: string }
+            prompt_id: { type: string }
+            prompt_version: { type: string }
+            backend: { type: string }
+        timestamp: { type: string, format: date-time }
+    Round:
+      type: object
+      properties:
+        round: { type: integer }
+        multi:
+          type: object
+          properties:
+            question: { type: string }
+            responses:
+              type: array
+              items: { $ref: '#/components/schemas/StructuredResponse' }
+            prompt_id: { type: string }
+            prompt_version: { type: string }
+        report:
+          type: object
+          properties:
+            confirmed:
+              type: array
+              items:
+                type: object
+                properties:
+                  point_text: { type: string }
+                  supporting_models:
+                    type: array
+                    items: { type: string }
+            contradictions:
+              type: array
+              items:
+                type: object
+            followups:
+              type: array
+              items:
+                type: object
+            recommendation: { type: string }
+        contradictions: { type: integer }
+        agreement_score: { type: number }
+    SessionResponse:
+      type: object
+      properties:
+        session_id: { type: string }
+        state: { type: string }
+        rounds:
+          type: array
+          items: { $ref: '#/components/schemas/Round' }
+        final_report:
+          type: object

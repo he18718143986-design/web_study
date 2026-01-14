@@ -1,0 +1,1 @@
+{"session_id": "7c42f7e6-3111-45e8-89c8-8a3e49b0969e", "state": "running", "rounds": [{"round": 1, "multi": {"question": "Hello", "responses": [{"model_id": "mock", "error": "name 'time' is not defined"}], "prompt_id": "answerer_v1", "prompt_version": "v1"}, "report": null, "contradictions": 0, "agreement_score": null}], "final_report": null}

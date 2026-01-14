@@ -1,0 +1,12 @@
+- id: answerer_v1
+  version: v1
+  template: |
+    (Answerer) Respond in JSON with fields: summary_points, detailed_explanation, evidence, reproducible_example. User question: <USER_QUESTION>. Context: <CONTEXT_HISTORY>.
+- id: peerreviewer_v1
+  version: v1
+  template: |
+    (Peer Reviewer) Given point text <POINT_TEXT> for question <USER_QUESTION>, return JSON judgement: agree|disagree|uncertain with reason and confidence.
+- id: nli_wrapper_v1
+  version: v1
+  template: |
+    (NLI) Determine relationship between two statements A and B: entailment|neutral|contradiction. A: <STATEMENT_A>. B: <STATEMENT_B>.

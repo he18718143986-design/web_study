@@ -1,0 +1,26 @@
+Answer the user question with a strictly valid JSON object using the schema:
+{
+  "summary_points": [
+    {"id":"p1","text":"one-sentence point","confidence":"high|medium|low"}
+  ],
+  "detailed_explanation": "1-3 paragraphs",
+  "evidence": ["url or citation", "..."],
+  "reproducible_example": "(code/steps or '')"
+}
+
+Rules:
+- Do not include any text outside the JSON.
+- Provide 3-6 concise summary_points.
+- If unsure, set confidence to "low" and explain the uncertainty in detailed_explanation.
+- Do not invent facts; prefer to say "insufficient evidence".
+- Keep JSON minimal; no trailing comments.
+
+Placeholders to substitute before calling the model:
+- <USER_QUESTION>
+- <CONTEXT_HISTORY>
+
+User question:
+<USER_QUESTION>
+
+Relevant context (may be empty):
+<CONTEXT_HISTORY>

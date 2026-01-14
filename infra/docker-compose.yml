@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: mllm-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mllm
+      POSTGRES_PASSWORD: mllm
+      POSTGRES_DB: mllm
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Note: Application services are not started in Phase 0. Add backend services in later phases.
+
+volumes:
+  pgdata:
